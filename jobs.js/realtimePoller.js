@@ -1,6 +1,6 @@
 // jobs/realtimePoller.js
 const axios = require('axios');
-const config = require('../config');
+const config = require('./routes/config');
 const BankTransaction = require('./models/BankTransaction');
 const CryptoTransaction = require('./models/CryptoTransaction');
 const { fetchUSDTtoNairaRate } = require('./services/rateService');

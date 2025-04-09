@@ -1,10 +1,10 @@
 const axios = require('axios');
-const config = require('./routes/config');
-
+const config = require('../routes/config'); // ✅ Good
 
 // AIML API endpoint and API key
 const AIML_API_URL = "https://api.aimlapi.com/chat/completions";
-const AIML_API_KEY = process.config.AIML_API_KEY;
+const AIML_API_KEY = config.deepseek.key; // ✅ Correct way
+
 
 /**
  * Sends a prompt to the AIML API (Deepseek chat service) and returns the response.

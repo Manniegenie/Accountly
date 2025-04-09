@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const deepseekService = require('./services/deepseekService');
+const deepseekService = require('../services/deepseekService.js');
+
+
 
 router.post(
   '/',

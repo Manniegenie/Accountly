@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const crypto = require('crypto');
-const config = require('./routes/config');
+const config = require('./config');
 
 // Endpoint to fetch real-time account info from Binance
 router.get('/account', async (req, res, next) => {
