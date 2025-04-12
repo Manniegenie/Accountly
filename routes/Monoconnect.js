@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const config = require('./routes/config'); // Adjust the path as needed
+const config = require('./config'); // Adjust the path as needed
 
 // Endpoint to initiate connection with Mono
 router.get('/account', async (req, res, next) => {

@@ -8,37 +8,26 @@ const jwt = require("jsonwebtoken");
 const passport = require("passport");
 
 // Import Routes
-const adminRoutes = require("./routes/adminRoutes");                 // Public: For adding pending users
-const registrationRoutes = require("./routes/registrationRoutes");   // Public: For completing registration with a password
-const authRoutes = require("./routes/authRoutes");                     // Public: For signing in and generating JWT
-const reconcileRoutes = require("./routes/reconcile");               // Protected: Reconciliation endpoints
-const binanceRoutes = require("./routes/binance");                     // Protected: Binance endpoints
-const monoconnectRoutes = require("./routes/Monoconnect");             // Protected: Mono (bank linking) endpoints
-
-const app = express();
+const adminRoutes = require("./routes/adminRoutes");               // Public: For adding pending users
+const registrationRoutes = require("./routes/registrationRoutes"); // Public: For completing registration with a password
+const authRoutes = require("./routes/authRoutes");                 // Public: For signing in and generating JWT
+const reconcileRoutes = require("./routes/reconcile");             // Protected: Reconciliation endpoints
+const binanceRoutes = require("./routes/binance");                 // Protected: Binance endpoints
+const monoconnectRoutes = require("./routes/Monoconnect");         // Protected: Mono (bank linking) endpoints
 
 const config = require("./routes/config");
 
-// ----- Database Connection -----
-mongoose.connect(config.mongoUri, { 
-  useNewUrlParser: true, 
-  useUnifiedTopology: true 
-})
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => {
-    console.error("❌ MongoDB Connection Error:", err.message);
-    process.exit(1);
-  });
+const app = express();
 
 // ----- Global Middlewares -----
 app.use(express.json());
-app.use(cors());
+app.use(cors()); // Enables CORS for all origins
 app.use(helmet());
 
 // ----- Global Rate Limiter -----
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 100, // Limit each IP to 100 requests per window
   message: { success: false, error: "Too many requests, please try again later" },
 });
 app.use(apiLimiter);
@@ -52,7 +41,7 @@ const authenticateToken = (req, res, next) => {
   if (!token) {
     return res.status(401).json({ success: false, error: "Unauthorized" });
   }
-  
+
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
       return res.status(403).json({ success: false, error: "Forbidden" });
@@ -61,6 +50,17 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// ----- Database Connection -----
+mongoose.connect(config.mongoURI, { 
+  useNewUrlParser: true, 
+  useUnifiedTopology: true 
+})
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => {
+    console.error("❌ MongoDB Connection Error:", err.message);
+    process.exit(1);
+  });
 
 // ----- Public Routes -----
 app.use("/admin", adminRoutes);

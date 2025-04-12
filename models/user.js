@@ -1,6 +1,5 @@
-// models/User.js
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const SALT_WORK_FACTOR = 10;
 
@@ -13,7 +12,6 @@ const UserSchema = new mongoose.Schema({
   // other fields...
 });
 
-// Pre-save hook to hash the password before saving.
 UserSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
 
@@ -26,9 +24,9 @@ UserSchema.pre('save', async function(next) {
   }
 });
 
-// Method to compare a provided password with the stored hash.
 UserSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('User', UserSchema);
+// Export the model under the name "User"
+module.exports = mongoose.models.User || mongoose.model('User', UserSchema);
