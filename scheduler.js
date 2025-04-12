@@ -2,7 +2,7 @@
 const cron = require('node-cron');
 const mongoose = require('mongoose');
 const config = require('./routes/config');
-const { getUnifiedTransactionLog } = require('./services/logService');
+const { getUnifiedTransactionLog } = require('../services/logService');
 
 // Connect to MongoDB before scheduling (if this scheduler runs as an independent process)
 mongoose.connect(config.mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })

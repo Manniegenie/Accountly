@@ -1,36 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
-const crypto = require('crypto');
-const config = require('./config');
+const User = require('../models/pendinguser');
 
-// Endpoint to fetch real-time account info from Binance
-router.get('/account', async (req, res, next) => {
-  try {
-    // Use API credentials from config (in a real-world scenario, these might come from user-specific settings)
-    const apiKey = config.binance.key;
-    const apiSecret = config.binance.secret;
-    const baseUrl = 'https://api.binance.com';
+// POST: /api/users/update-binance
+// Expected payload: { binanceKey, binanceSecret }
+router.post('/update-binance', async (req, res) => {
+  // Extract Binance credentials from the request body.
+  const { binanceKey, binanceSecret } = req.body;
 
-    // Create query string with timestamp (you may add additional parameters if needed)
-    const timestamp = Date.now();
-    const queryString = `timestamp=${timestamp}`;
-    // Generate the HMAC SHA256 signature
-    const signature = crypto.createHmac('sha256', apiSecret)
-                            .update(queryString)
-                            .digest('hex');
-    // Construct the URL for the account endpoint
-    const url = `${baseUrl}/api/v3/account?${queryString}&signature=${signature}`;
-
-    // Call the Binance API
-    const response = await axios.get(url, {
-      headers: { 'X-MBX-APIKEY': apiKey }
+  // Simple validation for required fields.
+  if (!binanceKey || !binanceSecret) {
+    return res.status(400).json({
+      message: 'Binance Key and Binance Secret are required.'
     });
+  }
 
-    res.json(response.data);
+  try {
+    // Assumes req.user is set by a previous authentication middleware.
+    let user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    
+    // Update the Binance credentials.
+    user.binanceKey = binanceKey;
+    user.binanceSecret = binanceSecret;
+    
+    // Save the user record.
+    await user.save();
+    res.status(200).json({ message: 'Binance credentials updated successfully.' });
   } catch (error) {
-    console.error("Error fetching Binance account info:", error.message);
-    next(error);
+    console.error("Error updating Binance credentials:", error);
+    res.status(500).json({ message: error.message });
   }
 });
 

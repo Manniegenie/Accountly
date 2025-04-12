@@ -1,6 +1,6 @@
 // services/logService.js
 const BankTransaction = require('../models/banktransaction');
-const CryptoTransaction = require('../models/CryptoTransaction');
+const CryptoTransaction = require('../models/cryptotransaction');
 
 async function getUnifiedTransactionLog() {
   try {
