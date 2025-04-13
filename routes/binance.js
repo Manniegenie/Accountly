@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/pendinguser');
+const User = require('../models/user');
 
 // POST: /api/users/update-binance
 // Expected payload: { binanceKey, binanceSecret }

@@ -1,3 +1,4 @@
+// models/CryptoTransaction.js
 const mongoose = require('mongoose');
 
 const CryptoTransactionSchema = new mongoose.Schema({
@@ -6,7 +7,8 @@ const CryptoTransactionSchema = new mongoose.Schema({
   timestamp: Date,
   wallet: String,
   currency: String,
-  conversionRate: { type: Number, required: false } // New field for the rate
+  conversionRate: { type: Number, required: false },
+  transactionId: { type: String, unique: true, required: true } // Added for duplicate checking
 });
 
-module.exports = mongoose.model('CryptoTransaction', CryptoTransactionSchema);
+module.exports = mongoose.models.CryptoTransaction || mongoose.model('CryptoTransaction', CryptoTransactionSchema);

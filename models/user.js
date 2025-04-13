@@ -1,3 +1,4 @@
+// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -8,11 +9,12 @@ const UserSchema = new mongoose.Schema({
   email:         { type: String, required: true, unique: true },
   binanceKey:    { type: String },
   binanceSecret: { type: String },
+  monoAccountId: { type: String }, // New field for Mono account ID
   password:      { type: String, required: true },
   // other fields...
 });
 
-UserSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
 
   try {
@@ -24,9 +26,8 @@ UserSchema.pre('save', async function(next) {
   }
 });
 
-UserSchema.methods.comparePassword = async function(candidatePassword) {
+UserSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Export the model under the name "User"
 module.exports = mongoose.models.User || mongoose.model('User', UserSchema);
