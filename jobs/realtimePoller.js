@@ -1,4 +1,3 @@
-// jobs/realtimePoller.js
 const axios = require('axios');
 const config = require('../routes/config');
 const BankTransaction = require('../models/banktransaction');
@@ -12,7 +11,6 @@ const activePollers = new Map();
 
 /**
  * Polls Binance for new crypto transactions using a user’s Binance credentials.
- * Uses the provided Binance API key and secret to request account data.
  */
 async function pollBinance(binanceKey, binanceSecret) {
   try {
@@ -23,15 +21,15 @@ async function pollBinance(binanceKey, binanceSecret) {
 
     const binanceResponse = await axios.get(`http://localhost:${config.port}/binance/account`, { headers });
     const accountData = binanceResponse.data;
-    console.log('Fetched Binance account data:', accountData);
+    console.log(`Fetched Binance account data for ${accountData.accountId}:`, accountData);
 
     let currentRate;
     try {
       currentRate = await fetchUSDTtoNairaRate();
-      console.log('Fetched current USDT to NGN rate:', currentRate);
+      console.log(`Fetched current USDT to NGN rate: ${currentRate}`);
     } catch (rateError) {
       console.error("Error fetching conversion rate, using default value (1):", rateError.message);
-      currentRate = 1; // Fallback conversion rate
+      currentRate = 1;
     }
 
     const usdtBalances = accountData.balances.filter(b => b.asset === 'USDT');
@@ -40,7 +38,7 @@ async function pollBinance(binanceKey, binanceSecret) {
 
       const txData = {
         asset: balance.asset,
-        amount: balance.free, // assuming "free" indicates the available amount
+        amount: balance.free,
         timestamp: Date.now(),
         client: accountData.accountId,
         transactionId,
@@ -93,7 +91,7 @@ async function pollMono(monoAccountId, client) {
             amount: tx.amount,
             narration: tx.narration,
             timestamp: new Date(tx.date),
-            client, // assign the user identifier
+            client, // user id or identifier
             type: tx.type,
             balance: tx.balance,
             category: tx.category,
@@ -115,9 +113,6 @@ async function pollMono(monoAccountId, client) {
 /**
  * Triggers reconciliation by fetching the most recent transaction from both sources,
  * saving a new PendingDeal record, and calling the reconciliation service.
- *
- * @param {String} client - The identifier for the user/client.
- * @param {number} currentRate - The current conversion rate.
  */
 async function triggerReconciliation(client, currentRate) {
   try {
@@ -130,15 +125,12 @@ async function triggerReconciliation(client, currentRate) {
       .sort({ timestamp: -1 })
       .lean();
 
-    // Prepare arrays for the reconciliation service.
     const bankTransactions = bankTransaction ? [bankTransaction] : [];
     const cryptoTransactions = cryptoTransaction ? [cryptoTransaction] : [];
 
-    // Compute total amounts from the retrieved transactions.
     const totalCryptoAmount = cryptoTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
     const totalMonoAmount = bankTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
 
-    // Save a PendingDeal record.
     const pendingDeal = new PendingDeal({
       cryptoAmount: totalCryptoAmount,
       monoAmount: totalMonoAmount,
@@ -161,35 +153,28 @@ async function triggerReconciliation(client, currentRate) {
 }
 
 /**
- * Starts polling for both Binance and Mono for the given user.
- * Uses an in-memory map to ensure pollers are only started once per user.
+ * Schedules pollers for a specific user. This function is called during sign in.
+ * It runs the pollers immediately and then sets up intervals to call them every 2 minutes.
  *
- * @param {Object} user - The user object containing the required credentials.
+ * @param {Object} user - The user object containing their credentials.
  */
 function startUserPollers(user) {
   const userId = user._id.toString();
-  if (activePollers.has(userId)) {
-    console.log(`Pollers already running for user ${userId}`);
-    return;
-  }
-  if (!user.binanceKey || !user.binanceSecret) {
-    console.error("Cannot start pollers: Binance API credentials are missing for user", userId);
-    return;
-  }
-  if (!user.monoAccountId) {
-    console.error("Cannot start pollers: Mono account ID is missing for user", userId);
-    return;
-  }
+  // Optionally, run the pollers immediately:
+  pollBinance(user.binanceKey, user.binanceSecret);
+  pollMono(user.monoAccountId, userId);
 
-  setInterval(() => {
+  // Now schedule them to run every 2 minutes.
+  const binanceInterval = setInterval(() => {
     pollBinance(user.binanceKey, user.binanceSecret);
   }, 120000);
 
-  setInterval(() => {
+  const monoInterval = setInterval(() => {
     pollMono(user.monoAccountId, userId);
   }, 120000);
 
-  activePollers.set(userId, true);
+  // Store the interval IDs so you can clear them later if needed.
+  activePollers.set(userId, { binanceInterval, monoInterval });
   console.log(`Started pollers for user ${userId}`);
 }
 

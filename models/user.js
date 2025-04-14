@@ -9,14 +9,23 @@ const UserSchema = new mongoose.Schema({
   email:         { type: String, required: true, unique: true },
   binanceKey:    { type: String },
   binanceSecret: { type: String },
-  monoAccountId: { type: String }, // New field for Mono account ID
+  monoAccountId: { type: String }, // Field for Mono account ID
   password:      { type: String, required: true },
   // other fields...
 });
 
+// Virtual to expose _id as userId
+UserSchema.virtual('userId').get(function() {
+  return this._id.toHexString();
+});
+
+// Ensure virtual fields are serialized.
+UserSchema.set('toJSON', {
+  virtuals: true
+});
+
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-
   try {
     const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
     this.password = await bcrypt.hash(this.password, salt);
