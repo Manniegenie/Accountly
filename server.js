@@ -16,6 +16,7 @@ const reconcileRoutes = require("./routes/reconcile");             // Protected:
 const binanceRoutes = require("./routes/binance");                 // Protected: Binance endpoints
 const monoconnectRoutes = require("./routes/Monoconnect");         // Protected: Mono (bank linking) endpoints
 const config = require("./routes/config");
+const logRoutes = require('./routes/log');
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use("/auth", authRoutes);
 app.use("/reconcile", authenticateToken, reconcileRoutes);
 app.use("/binance", authenticateToken, binanceRoutes);
 app.use("/monoconnect", authenticateToken, monoconnectRoutes);
+app.use("/log", authenticateToken, logRoutes);
 
 // ----- Root Route -----
 app.get("/", (req, res) => res.send("🚀 API Running"));
