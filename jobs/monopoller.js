@@ -1,4 +1,3 @@
-// jobs/monoPoller.js
 const axios = require('axios');
 const config = require('../routes/config');
 const User = require('../models/user');
@@ -47,9 +46,26 @@ async function pollMonoForUser(userId) {
   }
 }
 
+/**
+ * Schedules Mono poller to run every 2 minutes and stops it after 1 hour.
+ * 
+ * @param {String} userId 
+ * @returns {NodeJS.Timeout} The interval ID
+ */
 function scheduleMonoPoller(userId) {
+  // Run immediately
   pollMonoForUser(userId);
-  return setInterval(() => pollMonoForUser(userId), 120000);
+
+  // Schedule polling every 2 minutes (120,000 ms)
+  const intervalId = setInterval(() => pollMonoForUser(userId), 120000);
+
+  // Stop polling after 1 hour (3,600,000 ms)
+  setTimeout(() => {
+    clearInterval(intervalId);
+    console.log(`Mono poller stopped after 1 hour for user ${userId}`);
+  }, 3600000);
+
+  return intervalId;
 }
 
 module.exports = { pollMonoForUser, scheduleMonoPoller };

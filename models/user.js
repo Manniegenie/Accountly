@@ -1,4 +1,3 @@
-// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -7,8 +6,8 @@ const SALT_WORK_FACTOR = 10;
 const UserSchema = new mongoose.Schema({
   username:      { type: String, required: true },
   email:         { type: String, required: true, unique: true },
-  binanceKey:    { type: String },
-  binanceSecret: { type: String },
+  binanceKey:    { type: String, unique: true, sparse: true },
+  binanceSecret: { type: String, unique: true, sparse: true },
   monoAccountId: { type: String }, // Field for Mono account ID
   password:      { type: String, required: true },
   // other fields...

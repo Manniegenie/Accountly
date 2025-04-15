@@ -1,13 +1,9 @@
-// authRoutes.js
+// routes/authRoutes.js
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const User = require('../models/user');
 const config = require('./config');
-const { startBinancePoller } = require('../jobs/binancepoller');
-const { startMonoPoller } = require('../jobs/monopoller');
-// Update the import to match the correct file and function name
-const { startReconcileScheduler } = require('../jobs/reconcileScheduler');
 
 router.post('/signin', async (req, res) => {
   const { email, password } = req.body;
@@ -34,26 +30,6 @@ router.post('/signin', async (req, res) => {
     };
 
     const token = jwt.sign(payload, config.jwtSecret, { expiresIn: '1h' });
-
-    // Start Binance poller if credentials exist.
-    if (user.binanceKey && user.binanceSecret) {
-      startBinancePoller(user._id);
-      console.log(`Binance poller started for user ${user._id}`);
-    } else {
-      console.log(`User ${user._id} does not have Binance credentials.`);
-    }
-
-    // Start Mono poller if account linked.
-    if (user.monoAccountId) {
-      startMonoPoller(user._id);
-      console.log(`Mono poller started for user ${user._id}`);
-    } else {
-      console.log(`User ${user._id} does not have a Mono account linked.`);
-    }
-
-    // Start the global reconciliation scheduler (no market rate parameter)
-    startReconcileScheduler();
-    console.log("Reconciliation scheduler started globally.");
 
     res.status(200).json({
       message: "Sign in successful.",
