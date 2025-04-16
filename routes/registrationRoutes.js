@@ -8,50 +8,50 @@ const InferredDeal = require('../models/inferreddeal');
 
 router.post('/register', async (req, res) => {
   try {
-    // Create and save the new user using data from the request
-    const newUser = new User({
+    // Build user object without empty strings for sparse unique fields
+    const userData = {
       username: req.body.username,
       email: req.body.email,
       password: req.body.password,
-      // If there is no data yet for these optional fields, they can be omitted or left as empty strings.
-      binanceKey: '',
-      binanceSecret: '',
       monoAccountId: ''
-      // other fields can be added here...
-    });
+    };
+
+    // Only add binanceKey/Secret if provided
+    if (req.body.binanceKey) userData.binanceKey = req.body.binanceKey;
+    if (req.body.binanceSecret) userData.binanceSecret = req.body.binanceSecret;
+
+    const newUser = new User(userData);
     await newUser.save();
 
-    // Create a placeholder BankTransaction document
-    // Note: We need to satisfy all required fields. We use a dummy reference for transactionId.
+    // Create placeholder BankTransaction
     const placeholderBankTransaction = new BankTransaction({
-      source: '', // can be updated later when data is available
-      transactionId: `${newUser._id}-placeholder-bank`, // dummy unique ID
-      amount: 0,  // no real transaction amount yet
+      source: 'manual',
+      transactionId: `${newUser._id}-placeholder-bank`,
+      amount: 0,
       narration: '',
-      timestamp: new Date(),  // using current time as a placeholder
-      client: newUser._id.toString(),  // storing the user's id; adjust type if you decide to use ObjectId
-      type: 'credit',  // choose one; update later if necessary
+      timestamp: new Date(),
+      client: newUser._id.toString(),
+      type: 'credit',
       balance: 0,
-      category: ''
+      category: 'setup'
     });
     await placeholderBankTransaction.save();
 
-    // Create a placeholder CryptoTransaction document
-    // As above, provide defaults for required values.
+    // Create placeholder CryptoTransaction
     const placeholderCryptoTransaction = new CryptoTransaction({
       client: newUser._id,
-      amount: 0,  
+      amount: 0,
       transactionFee: 0,
-      timestamp: new Date(),  // using current time as a placeholder
-      completeTime: new Date(), // if there isn’t real data yet, this can be adjusted later
-      wallet: '',  // default wallet name; update later if needed
-      currency: '', // left blank until real coin info is provided
+      timestamp: new Date(),
+      completeTime: new Date(),
+      wallet: '',
+      currency: 'placeholder',
       conversionRate: 0,
-      transactionId: `${newUser._id}-placeholder-crypto`, // dummy unique ID
+      transactionId: `${newUser._id}-placeholder-crypto`,
       address: '',
       txId: '',
       network: '',
-      transferType: 0, // default value; 0 means external by your schema comment
+      transferType: 0,
       withdrawOrderId: '',
       info: '',
       confirmNo: 0,
@@ -59,15 +59,13 @@ router.post('/register', async (req, res) => {
     });
     await placeholderCryptoTransaction.save();
 
-    // Create an InferredDeal document that references the created transaction placeholders.
-    // Since transactions are arrays, we start with the placeholder IDs.
+    // Create inferred deal referencing placeholders
     const inferredDeal = new InferredDeal({
       fiatTransactions: [placeholderBankTransaction._id],
       cryptoTransactions: [placeholderCryptoTransaction._id],
       effectiveRate: 0,
       errorPercent: 0,
-      status: ''  // to be updated later based on deal inference logic
-      // createdAt will be set automatically
+      status: ''
     });
     await inferredDeal.save();
 

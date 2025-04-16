@@ -6,23 +6,26 @@ const SALT_WORK_FACTOR = 10;
 const UserSchema = new mongoose.Schema({
   username:      { type: String, required: true },
   email:         { type: String, required: true, unique: true },
+
+  // Unique, but sparse: avoids conflicts if not set
   binanceKey:    { type: String, unique: true, sparse: true },
   binanceSecret: { type: String, unique: true, sparse: true },
-  monoAccountId: { type: String }, // Field for Mono account ID
-  password:      { type: String, required: true },
-  // other fields...
+
+  monoAccountId: { type: String },
+  password:      { type: String, required: true }
 });
 
-// Virtual to expose _id as userId
-UserSchema.virtual('userId').get(function() {
+// Expose virtual userId
+UserSchema.virtual('userId').get(function () {
   return this._id.toHexString();
 });
 
-// Ensure virtual fields are serialized.
+// Enable virtuals in JSON output
 UserSchema.set('toJSON', {
   virtuals: true
 });
 
+// Password hashing middleware
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   try {
@@ -34,6 +37,7 @@ UserSchema.pre('save', async function (next) {
   }
 });
 
+// Password comparison method
 UserSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
