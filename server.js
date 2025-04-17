@@ -85,8 +85,7 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await mongoose.connect(config.mongoURI, { 
-      useNewUrlParser: true, 
-      useUnifiedTopology: true 
+   
     });
     console.log("✅ MongoDB Connected");
 
