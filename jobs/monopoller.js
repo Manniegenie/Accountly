@@ -1,8 +1,8 @@
 const axios = require('axios');
 const axiosRetry = require('axios-retry');
 const mongoose = require('mongoose');
-const User = require('./models/user');
-const BankTransaction = require('./models/banktransaction');
+const User = require('../models/user');
+const BankTransaction = require('../models/banktransaction');
 const config = require('../routes/config');
 
 // Configure axios with retries
