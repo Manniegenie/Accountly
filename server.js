@@ -8,6 +8,7 @@ const rateLimit = require("express-rate-limit");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const { startPoller } = require('./jobs/binancepoller'); // Start poller module
+const { pollMonoTransactions } = require('./jobs/monopoller'); // Start poller module
 
 // Import Routes
 const adminRoutes = require("./routes/adminRoutes");               // Public: For adding pending users
@@ -89,8 +90,9 @@ const startServer = async () => {
     });
     console.log("✅ MongoDB Connected");
 
-    // Start the Binance poller upon successful DB connection
+    // Start the Binance poller & Mono Poller upon successful DB connection
     startPoller();
+    pollMonoTransactions();
 
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {

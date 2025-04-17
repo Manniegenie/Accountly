@@ -1,71 +1,105 @@
 const axios = require('axios');
+const axiosRetry = require('axios-retry');
+const mongoose = require('mongoose');
+const User = require('./models/user');
+const BankTransaction = require('./models/banktransaction');
 const config = require('../routes/config');
-const User = require('../models/user');
-const BankTransaction = require('../models/banktransaction');
+
+// Configure axios with retries
+axiosRetry(axios, {
+  retries: 3,
+  retryDelay: (retryCount) => retryCount * 1000, // 1s, 2s, 3s
+  retryCondition: (error) => {
+    return error.code === 'EAI_AGAIN' || error.response?.status >= 500;
+  }
+});
 
 /**
- * Polls Mono for new bank transactions for the specified user.
+ * Polls Mono for new bank transactions for all users with a Mono account ID.
  */
-async function pollMonoForUser(userId) {
+async function pollMonoTransactions() {
+  const session = await mongoose.startSession();
   try {
-    const user = await User.findById(userId);
-    if (!user) return console.error(`User ${userId} not found.`);
-    if (!user.monoAccountId) {
-      return console.log(`No Mono account ID for user ${userId}.`);
+    session.startTransaction();
+
+    // Fetch users with Mono account IDs
+    const users = await User.find({
+      monoAccountId: { $exists: true, $ne: '' }
+    }).session(session);
+
+    if (!users.length) {
+      console.log('No users with Mono account IDs found.');
+      await session.commitTransaction();
+      session.endSession();
+      return;
     }
 
-    const url = `${config.mono.baseUrl}/v2/accounts/${user.monoAccountId}/transactions?paginate=false`;
-    const response = await axios.get(url, {
-      headers: {
-        accept: 'application/json',
-        'mono-sec-key': config.mono.secretKey,
+    for (const user of users) {
+      try {
+        // Validate Mono account ID
+        if (!user.monoAccountId) {
+          console.log(`Skipping user ${user._id}: No Mono account ID.`);
+          continue;
+        }
+
+        // Fetch transactions from Mono API
+        const url = `${config.mono.baseUrl}/v2/accounts/${user.monoAccountId}/transactions?paginate=false`;
+        const response = await axios.get(url, {
+          headers: {
+            accept: 'application/json',
+            'mono-sec-key': config.mono.secretKey
+          }
+        });
+
+        const transactions = response.data?.data || [];
+        if (!transactions.length) {
+          console.log(`No new transactions for user ${user._id}.`);
+          continue;
+        }
+
+        for (const tx of transactions) {
+          // Check if transaction exists
+          const exists = await BankTransaction.findOne({ transactionId: tx.id }).session(session);
+          if (exists) continue;
+
+          // Save new BankTransaction
+          const newBankTx = new BankTransaction({
+            source: 'mono',
+            transactionId: tx.id,
+            amount: Number(tx.amount) || 0,
+            narration: tx.narration || '',
+            timestamp: tx.date ? new Date(tx.date) : new Date(),
+            client: user._id.toString(),
+            type: tx.type || 'unknown',
+            balance: Number(tx.balance) || 0,
+            category: tx.category || 'uncategorized'
+          });
+
+          await newBankTx.save({ session });
+          console.log(`Saved Mono transaction ${tx.id} for user ${user._id} at ${new Date().toISOString()}`);
+        }
+      } catch (error) {
+        console.error(`Error for user ${user._id}:`, {
+          message: error.message,
+          code: error.code,
+          status: error.response?.status,
+          response: error.response?.data,
+          stack: error.stack
+        });
       }
-    });
-
-    const transactions = response.data?.data || [];
-    for (const tx of transactions) {
-      const exists = await BankTransaction.findOne({ transactionId: tx.id });
-      if (exists) continue;
-
-      await new BankTransaction({
-        source: 'mono',
-        transactionId: tx.id,
-        amount: tx.amount,
-        narration: tx.narration,
-        timestamp: new Date(tx.date),
-        client: userId,
-        type: tx.type,
-        balance: tx.balance,
-        category: tx.category,
-      }).save();
-
-      console.log(`Saved Mono tx ${tx.id} for user ${userId}`);
     }
+
+    // Commit transaction
+    await session.commitTransaction();
+    session.endSession();
   } catch (error) {
-    console.error("Error in Mono poller:", error.message);
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Mono polling error:', {
+      message: error.message,
+      stack: error.stack
+    });
   }
 }
 
-/**
- * Schedules Mono poller to run every 2 minutes and stops it after 1 hour.
- * 
- * @param {String} userId 
- * @returns {NodeJS.Timeout} The interval ID
- */
-function scheduleMonoPoller(userId) {
-  // Run immediately
-  pollMonoForUser(userId);
-
-  // Schedule polling every 2 minutes (120,000 ms)
-  const intervalId = setInterval(() => pollMonoForUser(userId), 120000);
-
-  // Stop polling after 1 hour (3,600,000 ms)
-  setTimeout(() => {
-    clearInterval(intervalId);
-    console.log(`Mono poller stopped after 1 hour for user ${userId}`);
-  }, 3600000);
-
-  return intervalId;
-}
-
-module.exports = { pollMonoForUser, scheduleMonoPoller };
+module.exports = { pollMonoTransactions };
