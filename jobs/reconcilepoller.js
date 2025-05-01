@@ -1,5 +1,5 @@
 const User = require('../models/user');
-const { reconcileLatestTransactions } = require('../services/reconcileservice');
+const { reconcileLatestTransactions } = require('../services/reconcileService');
 
 /**
  * Polls all users and runs reconciliation every 15 minutes.
