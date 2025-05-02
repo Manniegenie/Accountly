@@ -9,11 +9,6 @@ const passport = require("passport");
 const axios = require('axios');
 
 
-// Import pollers
-const { startPoller } = require("./jobs/binancepoller");
-const { startMonoPoller } = require("./jobs/monopoller");
-const { startReconcilePoller } = require('./jobs/reconcilepoller');
-
 // Import Routes
 const adminRoutes = require("./routes/adminRoutes");
 const registrationRoutes = require("./routes/registrationRoutes");
@@ -94,10 +89,6 @@ const startServer = async () => {
     await mongoose.connect(require("./routes/config").mongoURI);
     console.log("✅ MongoDB Connected");
 
-    // 2) Start your pollers
-    startPoller();
-    startMonoPoller();
-    startReconcilePoller();
 
 
     // 3) Finally, start listening
