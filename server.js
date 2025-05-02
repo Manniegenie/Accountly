@@ -74,7 +74,9 @@ app.use("/bankinfo", authenticateToken, bankinfo);
 
 
 // ----- Root Route -----
-app.get("/", (req, res) => res.send("🚀 API Running"));
+app.get("/", (req, res) => {
+  res.send(`🚀 API Running at ${new Date().toISOString()}`);
+});
 
 // ----- Global Error Handler -----
 app.use((err, req, res, next) => {
