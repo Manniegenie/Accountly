@@ -34,20 +34,6 @@ router.post('/signin', async (req, res) => {
 
     const token = jwt.sign(payload, config.jwtSecret, { expiresIn: '1h' });
 
-    // ✅ Start Binance crypto poller
-    if (user.binanceKey && user.binanceSecret) {
-      startUserPortfolioPolling(user);
-    } else {
-      console.log(`User ${user._id} has no Binance credentials, skipping crypto poller.`);
-    }
-
-    // ✅ Start Mono bank poller
-    if (user.monoAccountId) {
-      startUserBankPolling(user);
-    } else {
-      console.log(`User ${user._id} has no monoAccountId, skipping bank poller.`);
-    }
-
     res.status(200).json({
       message: "Sign in successful.",
       token,
