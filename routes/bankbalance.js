@@ -7,7 +7,7 @@ const axios = require('axios');
 
 router.get('/bank-balance', async (req, res) => {
   try {
-    const user = req.user;
+    const user = req.user; // Already attached via global JWT middleware
     const accountId = user.monoAccountId;
 
     if (!accountId) return res.status(400).json({ error: 'Mono account not linked' });
@@ -18,11 +18,9 @@ router.get('/bank-balance', async (req, res) => {
     const isStale = !balanceLog || (now - new Date(balanceLog.fetchedAt).getTime()) > 5 * 60 * 1000;
 
     if (!balanceLog || isStale) {
-      // Step 1: Sync
       await triggerMonoSync(accountId);
-      await new Promise(res => setTimeout(res, 8000)); // Wait 8 seconds for sync
+      await new Promise(res => setTimeout(res, 8000));
 
-      // Step 2: Fetch fresh balance
       const response = await axios.get(`${config.Mono.baseUrl}/v2/accounts/${accountId}/balance`, {
         headers: {
           'mono-sec-key': config.Mono.secret,
@@ -36,7 +34,6 @@ router.get('/bank-balance', async (req, res) => {
         return res.status(502).json({ error: 'Invalid balance data from Mono' });
       }
 
-      // Step 3: Upsert into MongoDB
       balanceLog = await BankBalanceLog.findOneAndUpdate(
         { accountId },
         {
