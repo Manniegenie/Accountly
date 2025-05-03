@@ -61,7 +61,7 @@ async function fetchBankBalance(user) {
 
   try {
     await triggerMonoSync(accountId);
-    await new Promise(res => setTimeout(res, 5000)); // Wait 5s for sync
+    await new Promise(res => setTimeout(res, 15000));
 
     const response = await limiter.schedule(() =>
       axios.get(`${monoBaseUrl}/v2/accounts/${accountId}/balance`, {
