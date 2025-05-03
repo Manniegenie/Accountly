@@ -33,10 +33,9 @@ const bankBalanceSchema = new mongoose.Schema({
   fetchedAt: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
-// Ensure uniqueness for each account per user
 bankBalanceSchema.index({ client: 1, accountId: 1, accountNumber: 1 }, { unique: true });
 
 module.exports = mongoose.model('BankBalanceLog', bankBalanceSchema);
