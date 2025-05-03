@@ -5,9 +5,9 @@ const triggerMonoSync = require('../utils/triggerSync');
 const config = require('../routes/config');
 const axios = require('axios');
 
-router.get('/bank-balance', async (req, res) => {
+router.get('/bank-balance/latest', async (req, res) => {
   try {
-    const user = req.user; // Already attached via global JWT middleware
+    const user = req.user;
     const accountId = user.monoAccountId;
 
     if (!accountId) return res.status(400).json({ error: 'Mono account not linked' });

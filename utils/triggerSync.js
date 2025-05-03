@@ -2,20 +2,12 @@ const axios = require('axios');
 const config = require('../routes/config');
 const winston = require('winston');
 
-// Logger (or replace with your existing logger)
 const logger = winston.createLogger({
   level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.simple()
-  ),
+  format: winston.format.combine(winston.format.timestamp(), winston.format.simple()),
   transports: [new winston.transports.Console()],
 });
 
-/**
- * Triggers Mono sync for a given accountId.
- * Returns true if successful, false otherwise.
- */
 async function triggerMonoSync(accountId) {
   try {
     const response = await axios.post(

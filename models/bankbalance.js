@@ -4,10 +4,10 @@ const bankBalanceSchema = new mongoose.Schema({
   client: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: false, // Webhook won't always have this, can be added later if needed
+    required: false,
   },
   monoUserId: {
-    type: String, // From data.user_id in webhook
+    type: String,
     required: false,
   },
   accountId: {
@@ -19,7 +19,7 @@ const bankBalanceSchema = new mongoose.Schema({
     required: true,
   },
   name: {
-    type: String, // data.name (e.g., "SAMUEL OLAMIDE NOMO")
+    type: String,
     required: false,
   },
   balance: {
