@@ -1,7 +1,7 @@
 const axios = require('axios');
 const Bottleneck = require('bottleneck');
 const winston = require('winston');
-const BankBalanceLog = require('../models/bankbalance'); // Create this model if it doesn't exist
+const BankBalanceLog = require('../models/bankbalance'); // Make sure this path is correct
 const config = require('../routes/config'); // Adjust path if needed
 
 // Configurations
@@ -42,7 +42,7 @@ async function fetchBankBalance(user) {
 
   try {
     const response = await limiter.schedule(() =>
-      axios.get(`${monoBaseUrl}/v2/accounts/${accountId}`, {
+      axios.get(`${monoBaseUrl}/v2/accounts/${accountId}/balance`, {
         headers: {
           'mono-sec-key': monoSecretKey,
           Accept: 'application/json',
@@ -51,32 +51,31 @@ async function fetchBankBalance(user) {
       })
     );
 
-    const account = response.data?.data?.account;
-    if (!account || typeof account.balance !== 'number') {
-      throw new Error('Invalid or missing account data');
+    const data = response.data?.data;
+    if (!data || typeof data.balance !== 'number') {
+      throw new Error('Invalid or missing balance data');
     }
 
-    // Save to BankBalanceLog
     await BankBalanceLog.create({
       client: user._id,
-      accountId: account.id,
-      bankName: account.institution?.name || 'Unknown',
-      balance: account.balance,
-      currency: account.currency || 'NGN',
-      accountType: account.type || '',
-      accountNumber: account.account_number,
+      accountId: data.id,
+      accountNumber: data.account_number,
+      balance: data.balance,
+      currency: data.currency || 'NGN',
+      bankName: 'Unknown',
+      accountType: '',
       fetchedAt: new Date(),
     });
 
     logger.info('Bank balance logged', {
       userId: user._id,
-      balance: account.balance,
+      balance: data.balance,
     });
 
   } catch (err) {
     logger.error('Error fetching bank balance', {
       userId: user._id,
-      message: err.message,
+      message: err.response?.data?.message || err.message,
     });
   }
 }
