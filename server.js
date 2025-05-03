@@ -22,6 +22,7 @@ const binancedealRoutes = require("./routes/binancedeal");
 const bankdealRoutes = require("./routes/bankdeal");
 const binancebalance = require("./routes/binancebalance")
 const bankinfo = require("./routes/bankbalance")
+const monoWebhookRoutes = require('./routes/bankbalancewebhook');
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use("/binance-transactions", authenticateToken, binancedealRoutes);
 app.use("/bank-transactions", authenticateToken, bankdealRoutes);
 app.use("/binance-balance", authenticateToken, binancebalance);
 app.use("/bankinfo", authenticateToken, bankinfo);
+app.use("/bank-balance", authenticateToken, monoWebhookRoutes);
 
 
 
