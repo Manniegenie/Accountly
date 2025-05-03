@@ -1,16 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const BankBalanceLog = require('../models/bankbalance');
+const User = require('../models/user'); // ✅ Add this
 const triggerMonoSync = require('../utils/triggerSync');
 const config = require('../routes/config');
 const axios = require('axios');
 
-router.get('/bank-balance/latest', async (req, res) => {
+router.get('/bank-balance', async (req, res) => {
   try {
-    const user = req.user;
-    const accountId = user.monoAccountId;
+    const userId = req.user?.id || req.user?._id;
 
-    if (!accountId) return res.status(400).json({ error: 'Mono account not linked' });
+    if (!userId) return res.status(401).json({ error: 'Unauthorized: no user ID in token' });
+
+    // ✅ Look up the full user from DB
+    const user = await User.findById(userId).lean();
+
+    if (!user || !user.monoAccountId) {
+      return res.status(400).json({ error: 'Mono account not linked' });
+    }
+
+    const accountId = String(user.monoAccountId).trim();
 
     let balanceLog = await BankBalanceLog.findOne({ accountId });
 
