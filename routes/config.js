@@ -21,3 +21,4 @@ redirect_url: process.env.MONO_REDIRECT_URL,
 
 jwtSecret: process.env.JWT_SECRET || 'yourSuperSecretKey'
 };
+
