@@ -30,7 +30,10 @@ const PORT = process.env.PORT || 3000; // Fallback to 3000 if PORT is not define
 
 // ----- Global Middlewares -----
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: ['https://www.priscaai.online'], // Vercel domain or localhost:5173
+  credentials: true
+}));
 app.use(helmet());
 
 // ----- Global Rate Limiter -----
