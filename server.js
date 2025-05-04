@@ -13,9 +13,14 @@ const PORT = process.env.PORT || 3000;
 
 // ----- CORS: Allow both www and non-www domains -----
 app.use(cors({
-  origin: ['https://priscaai.online', 'https://www.priscaai.online'],
+  origin: [
+    'https://priscaai.online',
+    'https://www.priscaai.online',
+    'https://accountly-frontend.vercel.app' // ✅ add this
+  ],
   credentials: true
 }));
+
 
 // ----- Middlewares -----
 app.use(express.json());
