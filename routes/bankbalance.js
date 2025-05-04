@@ -1,26 +1,33 @@
 const express = require('express');
 const router = express.Router();
 const BankBalanceLog = require('../models/bankbalance');
-const User = require('../models/user'); // ✅ Add this
+const User = require('../models/user');
 const triggerMonoSync = require('../utils/triggerSync');
 const config = require('../routes/config');
 const axios = require('axios');
 
+// GET /bankinfo/bank-balance - Get the latest fiat bank balance
 router.get('/bank-balance', async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id;
 
-    if (!userId) return res.status(401).json({ error: 'Unauthorized: no user ID in token' });
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized: No user ID in token.',
+      });
+    }
 
-    // ✅ Look up the full user from DB
     const user = await User.findById(userId).lean();
 
     if (!user || !user.monoAccountId) {
-      return res.status(400).json({ error: 'Mono account not linked' });
+      return res.status(400).json({
+        success: false,
+        message: 'Mono account not linked.',
+      });
     }
 
     const accountId = String(user.monoAccountId).trim();
-
     let balanceLog = await BankBalanceLog.findOne({ accountId });
 
     const now = Date.now();
@@ -40,7 +47,10 @@ router.get('/bank-balance', async (req, res) => {
       const data = response.data?.data;
 
       if (!data || typeof data.balance !== 'number') {
-        return res.status(502).json({ error: 'Invalid balance data from Mono' });
+        return res.status(502).json({
+          success: false,
+          message: 'Invalid balance data received from Mono.',
+        });
       }
 
       balanceLog = await BankBalanceLog.findOneAndUpdate(
@@ -58,11 +68,21 @@ router.get('/bank-balance', async (req, res) => {
       );
     }
 
-    return res.status(200).json({ data: { balance: balanceLog.balance } });
+    res.status(200).json({
+      success: true,
+      data: {
+        balance: balanceLog.balance,
+        currency: balanceLog.currency,
+        fetchedAt: balanceLog.fetchedAt,
+      }
+    });
 
   } catch (err) {
-    console.error('Error in /bank-balance/latest:', err);
-    res.status(500).json({ error: 'Internal error fetching fiat balance' });
+    console.error('Error fetching bank balance:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching bank balance.',
+    });
   }
 });
 
