@@ -16,7 +16,7 @@ app.use(cors({
   origin: [
     'https://priscaai.online',
     'https://www.priscaai.online',
-    'https://accountly-frontend.vercel.app' // ✅ add this
+    'https://priscaai.vercel.app' // ✅ add this
   ],
   credentials: true
 }));
